@@ -40,9 +40,10 @@ contract Collection is ERC721Enumerable, Ownable {
     string public baseExtension = ".json";
     uint256 public maxSupply = 1000;
     uint256 public maxMintAmount = 5;
+    uint256 public costETH = 0.01 ether;
     bool public paused = false;
 
-    constructor() ERC721("Net2Dev NFT Collection", "N2D") {}
+    constructor() ERC721("MyFkinNFT", "MFK") {}
 
     function addCurrency(
         IERC20 _paytoken,
@@ -61,7 +62,7 @@ contract Collection is ERC721Enumerable, Ownable {
 
     }
 
-    function mint(address _to, uint256 _mintAmount, uint256 _pid) public payable {
+    function mintWithToken(uint256 _mintAmount, uint256 _pid) public payable {
         TokenInfo storage tokens = AllowedCrypto[_pid];
         IERC20 paytoken;
         paytoken = tokens.paytoken;
@@ -79,10 +80,28 @@ contract Collection is ERC721Enumerable, Ownable {
             
             for (uint256 i = 1; i <= _mintAmount; i++) {
                 paytoken.transferFrom(msg.sender, address(this), cost);
-                _safeMint(_to, supply + i);
+                _safeMint(msg.sender, supply + i);
             }
         }
 
+    function mint(uint256 _mintAmount) public payable {
+            uint256 supply = totalSupply();
+            require(!paused);
+            require(_mintAmount > 0);
+            require(_mintAmount <= maxMintAmount);
+            require(supply + _mintAmount <= maxSupply);
+            if (msg.sender != owner()) {
+                require(msg.value >= costETH * _mintAmount);
+                }
+            for (uint256 i = 1; i <= _mintAmount; i++) {
+                _safeMint(msg.sender, supply + i);
+            }
+        }
+
+        function setCost(uint256 _newCost) public onlyOwner {
+            costETH = _newCost;
+        }
+        
         function walletOfOwner(address _owner)
         public
         view
